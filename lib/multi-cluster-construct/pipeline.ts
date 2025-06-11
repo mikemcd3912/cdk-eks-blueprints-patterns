@@ -110,7 +110,7 @@ export class PipelineMultiCluster {
             stackBuilder : blueprintBottleRocketArm.clone(region)
         });
 
-        const gitOwner = 'aws-samples';
+        const gitOwner = 'mcdnmi';
         const gitRepositoryName = 'cdk-eks-blueprints-patterns';
 
         blueprints.CodePipelineStack.builder()
@@ -121,7 +121,7 @@ export class PipelineMultiCluster {
             .repository({
                 repoUrl: gitRepositoryName,
                 credentialsSecretName: 'github-token',
-                targetRevision: 'conformitronPipeline',
+                targetRevision: 'conformitron-pipeline',
                 trigger: blueprints.GitHubTrigger.POLL
             })
             .wave({
