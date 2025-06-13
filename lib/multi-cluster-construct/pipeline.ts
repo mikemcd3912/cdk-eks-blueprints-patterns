@@ -15,7 +15,7 @@ export class PipelineMultiCluster {
         const accountID = process.env.ACCOUNT_ID! || process.env.CDK_DEFAULT_ACCOUNT! ;
         const region = process.env.AWS_REGION! || process.env.CDK_DEFAULT_REGION!;
 
-        const versions = blueprints.utils.valueFromContext(scope, "conformitron.versions", ["1.31","1.32","1.33"]);
+        const versions = blueprints.utils.valueFromContext(scope, "conformitron.versions", ["1.30","1.31","1.32"]);
 
         const CLUSTER_VERSIONS = versions.map((v: string) => eks.KubernetesVersion.of(v));
 
