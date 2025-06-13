@@ -1,6 +1,7 @@
 import { Construct } from 'constructs';
 import * as blueprints from '@aws-quickstart/eks-blueprints';
 import * as eks from 'aws-cdk-lib/aws-eks';
+import * as amp from 'aws-cdk-lib/aws-aps';
 import { GrafanaOperatorSecretAddon } from './grafana-operator-secret-addon';
 import * as fs from 'fs';
 
@@ -10,8 +11,8 @@ export class GrafanaMonitoringConstruct {
 
         const stackId = `${id}-grafana-monitor`;
 
-        const account = contextAccount! || process.env.ACCOUNT_ID! || process.env.CDK_DEFAULT_ACCOUNT!;
-        const region = contextRegion! || process.env.AWS_REGION! || process.env.CDK_DEFAULT_REGION!;
+        const account = contextAccount! || process.env.COA_ACCOUNT_ID! || process.env.CDK_DEFAULT_ACCOUNT!;
+        const region = contextRegion! || process.env.COA_AWS_REGION! || process.env.CDK_DEFAULT_REGION!;
 
         this.create(scope, account, region)
             .build(scope, stackId);
@@ -19,26 +20,27 @@ export class GrafanaMonitoringConstruct {
 
     create(scope: Construct, contextAccount?: string, contextRegion?: string ) {
 
-        const account = contextAccount! || process.env.ACCOUNT_ID! || process.env.CDK_DEFAULT_ACCOUNT!;
-        const region = contextRegion! || process.env.AWS_REGION! || process.env.CDK_DEFAULT_REGION!;
+        const account = contextAccount! || process.env.COA_ACCOUNT_ID! || process.env.CDK_DEFAULT_ACCOUNT!;
+        const region = contextRegion! || process.env.COA_AWS_REGION! || process.env.CDK_DEFAULT_REGION!;
         
-        // TODO: CFN import https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.Fn.html#static-importwbrvaluesharedvaluetoimport
+
         const ampWorkspaceName = "conformitronWorkspace";
-        const ampEndpoint = blueprints.utils.valueFromContext(scope, "conformitron.amp.endpoint", "https://aps-workspaces.<region>.amazonaws.com/workspaces/<workspace-id>/");
-        const ampWorkspaceArn = blueprints.utils.valueFromContext(scope, "conformitron.amp.arn", "arn:aws:aps:<region>:<accountid>:workspace/<workspace-id>");
-        
+        // const ampPrometheusWorkspace = (blueprints.getNamedResource(ampWorkspaceName) as unknown as amp.CfnWorkspace);
+        const ampEndpoint = `https://aps-workspaces.us-west-2.amazonaws.com/workspaces/ws-b08fda60-7e79-450c-972d-262ebac98c3e/`;
+        const ampWorkspaceArn = `arn:aws:aps:us-west-2:867286930927:workspace/ws-b08fda60-7e79-450c-972d-262ebac98c3e`;
+
         const ampAddOnProps: blueprints.AmpAddOnProps = {
             ampPrometheusEndpoint: ampEndpoint,
             ampRules: {
                 ampWorkspaceArn: ampWorkspaceArn,
                 ruleFilePaths: [
-                    __dirname + '/resources/amp-config/alerting-rules.yml',
-                    __dirname + '/resources/amp-config/recording-rules.yml'
+                    __dirname + '/../common/resources/amp-config/alerting-rules.yml',
+                    __dirname + '/../common/resources/amp-config/recording-rules.yml'
                 ]
             }
         };
 
-        let doc = blueprints.utils.readYamlDocument(__dirname + '/resources/otel-collector-config.yml');
+        let doc = blueprints.utils.readYamlDocument(__dirname + '/../common/resources/otel-collector-config.yml');
         doc = blueprints.utils.changeTextBetweenTokens(
             doc,
             "{{ start enableJavaMonJob }}",
@@ -89,12 +91,12 @@ export class GrafanaMonitoringConstruct {
             true
         );
 
-        fs.writeFileSync(__dirname + '/resources/otel-collector-config-new.yml', doc);
+        fs.writeFileSync(__dirname + '/../common/resources/otel-collector-config-new.yml', doc);
 
         ampAddOnProps.openTelemetryCollector = {
-            manifestPath: __dirname + '/resources/otel-collector-config-new.yml',
+            manifestPath: __dirname + '/../common/resources/otel-collector-config-new.yml',
             manifestParameterMap: {
-                logGroupName: `/aws/eks/conformitron/workspace`,
+                logGroupName: `/aws/eks/conformitron/myWorkspace`,
                 logStreamName: `$NODE_NAME`,
                 logRetentionDays: 30,
                 awsRegion: region 
@@ -103,7 +105,7 @@ export class GrafanaMonitoringConstruct {
 
         const fluxRepository: blueprints.FluxGitRepo = blueprints.utils.valueFromContext(scope, "fluxRepository", undefined);
         fluxRepository.values!.AMG_AWS_REGION = region;
-        fluxRepository.values!.AMG_ENDPOINT_URL = blueprints.utils.valueFromContext(scope, "conformitron.amg.endpoint","https://<grafana-id>.grafana-workspace.<region>.amazonaws.com"); 
+        fluxRepository.values!.AMG_ENDPOINT_URL = 'https://g-76edcf29d5.grafana-workspace.us-west-2.amazonaws.com'; // update this to blueprints.utils.valueFromContext(scope, "fluxRepository", undefined)
 
         Reflect.defineMetadata("ordered", true, blueprints.addons.GrafanaOperatorAddon); //sets metadata ordered to true for GrafanaOperatorAddon
         const addOns: Array<blueprints.ClusterAddOn> = [
@@ -117,6 +119,9 @@ export class GrafanaMonitoringConstruct {
             .region(region)
             .version(eks.KubernetesVersion.V1_27)
             .resourceProvider(ampWorkspaceName, new blueprints.CreateAmpProvider(ampWorkspaceName, ampWorkspaceName))
+            .withCoreDnsProps({
+                version:"v1.9.3-eksbuild.11"
+            })
             .withAmpProps(ampAddOnProps)
             .enableOpenSourcePatternAddOns()
             .addOns(
