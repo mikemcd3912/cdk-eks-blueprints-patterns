@@ -34,13 +34,13 @@ export class GrafanaMonitoringConstruct {
             ampRules: {
                 ampWorkspaceArn: ampWorkspaceArn,
                 ruleFilePaths: [
-                    __dirname + '/../common/resources/amp-config/alerting-rules.yml',
-                    __dirname + '/../common/resources/amp-config/recording-rules.yml'
+                    __dirname + '/resources/amp-config/alerting-rules.yml',
+                    __dirname + '/resources/amp-config/recording-rules.yml'
                 ]
             }
         };
 
-        let doc = blueprints.utils.readYamlDocument(__dirname + '/../common/resources/otel-collector-config.yml');
+        let doc = blueprints.utils.readYamlDocument(__dirname + '/resources/otel-collector-config.yml');
         doc = blueprints.utils.changeTextBetweenTokens(
             doc,
             "{{ start enableJavaMonJob }}",
@@ -91,10 +91,10 @@ export class GrafanaMonitoringConstruct {
             true
         );
 
-        fs.writeFileSync(__dirname + '/../common/resources/otel-collector-config-new.yml', doc);
+        fs.writeFileSync(__dirname + '/resources/otel-collector-config-new.yml', doc);
 
         ampAddOnProps.openTelemetryCollector = {
-            manifestPath: __dirname + '/../common/resources/otel-collector-config-new.yml',
+            manifestPath: __dirname + '/resources/otel-collector-config-new.yml',
             manifestParameterMap: {
                 logGroupName: `/aws/eks/conformitron/myWorkspace`,
                 logStreamName: `$NODE_NAME`,
