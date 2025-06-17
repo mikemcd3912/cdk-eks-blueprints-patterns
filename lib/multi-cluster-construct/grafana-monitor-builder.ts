@@ -109,7 +109,7 @@ export class GrafanaMonitoringConstruct {
 
         Reflect.defineMetadata("ordered", true, blueprints.addons.GrafanaOperatorAddon); //sets metadata ordered to true for GrafanaOperatorAddon
         const addOns: Array<blueprints.ClusterAddOn> = [
-            new blueprints.addons.FluxCDAddOn({"repositories": [fluxRepository]}),
+            new blueprints.addons.FluxCDAddOn({repositories: [fluxRepository]}),
             new GrafanaOperatorSecretAddon(),
             new blueprints.addons.SSMAgentAddOn()
         ];
@@ -117,7 +117,7 @@ export class GrafanaMonitoringConstruct {
         return blueprints.ObservabilityBuilder.builder()
             .account(account)
             .region(region)
-            .version(eks.KubernetesVersion.V1_27)
+            .version(eks.KubernetesVersion.V1_31)
             .resourceProvider(ampWorkspaceName, new blueprints.CreateAmpProvider(ampWorkspaceName, ampWorkspaceName))
             .withAmpProps(ampAddOnProps)
             .enableOpenSourcePatternAddOns()
