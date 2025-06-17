@@ -105,11 +105,36 @@ export class GrafanaMonitoringConstruct {
 
         const fluxRepository: blueprints.FluxGitRepo = blueprints.utils.valueFromContext(scope, "fluxRepository", undefined);
         fluxRepository.values!.AMG_AWS_REGION = region;
-        fluxRepository.values!.AMG_ENDPOINT_URL = 'https://g-76edcf29d5.grafana-workspace.us-west-2.amazonaws.com'; // update this to blueprints.utils.valueFromContext(scope, "fluxRepository", undefined)
+        fluxRepository.values!.; // update this to blueprints.utils.valueFromContext(scope, "fluxRepository", undefined)
 
         Reflect.defineMetadata("ordered", true, blueprints.addons.GrafanaOperatorAddon); //sets metadata ordered to true for GrafanaOperatorAddon
         const addOns: Array<blueprints.ClusterAddOn> = [
-            new blueprints.addons.FluxCDAddOn({repositories: [fluxRepository]}),
+            new blueprints.addons.FluxCDAddOn({
+                repositories:[{
+                    name: "grafana-dashboards",
+                    namespace: "grafana-operator",
+                    repository: {
+                        name: "grafana-dashboards",
+                        repoUrl: 'https://github.com/aws-observability/aws-observability-accelerator',
+                        targetRevision: "main",
+                        path: "./artifacts/grafana-operator-manifests/eks/infrastructure"
+                    },
+                    values: {
+                        AMG_AWS_REGION: region,
+                        AMG_ENDPOINT_URL: 'https://g-76edcf29d5.grafana-workspace.us-west-2.amazonaws.com',
+                        GRAFANA_CLUSTER_DASH_URL : "https://raw.githubusercontent.com/aws-observability/aws-observability-accelerator/main/artifacts/grafana-dashboards/eks/infrastructure/cluster.json",
+                        GRAFANA_KUBELET_DASH_URL : "https://raw.githubusercontent.com/aws-observability/aws-observability-accelerator/main/artifacts/grafana-dashboards/eks/infrastructure/kubelet.json",
+                        GRAFANA_NSWRKLDS_DASH_URL : "https://raw.githubusercontent.com/aws-observability/aws-observability-accelerator/main/artifacts/grafana-dashboards/eks/infrastructure/namespace-workloads.json",
+                        GRAFANA_NODEEXP_DASH_URL : "https://raw.githubusercontent.com/aws-observability/aws-observability-accelerator/main/artifacts/grafana-dashboards/eks/infrastructure/nodeexporter-nodes.json",
+                        GRAFANA_NODES_DASH_URL : "https://raw.githubusercontent.com/aws-observability/aws-observability-accelerator/main/artifacts/grafana-dashboards/eks/infrastructure/nodes.json",
+                        GRAFANA_WORKLOADS_DASH_URL : "https://raw.githubusercontent.com/aws-observability/aws-observability-accelerator/main/artifacts/grafana-dashboards/eks/infrastructure/workloads.json"
+
+                    },
+                    kustomizations: [
+                        {kustomizationPath: "./artifacts/grafana-operator-manifests/eks/infrastructure"}
+                    ],
+                }],
+            }),
             new GrafanaOperatorSecretAddon(),
             new blueprints.addons.SSMAgentAddOn()
         ];
