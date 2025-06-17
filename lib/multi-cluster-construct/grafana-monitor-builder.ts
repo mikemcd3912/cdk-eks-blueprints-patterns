@@ -103,10 +103,6 @@ export class GrafanaMonitoringConstruct {
             }
         };
 
-        const fluxRepository: blueprints.FluxGitRepo = blueprints.utils.valueFromContext(scope, "fluxRepository", undefined);
-        fluxRepository.values!.AMG_AWS_REGION = region;
-        fluxRepository.values!.; // update this to blueprints.utils.valueFromContext(scope, "fluxRepository", undefined)
-
         Reflect.defineMetadata("ordered", true, blueprints.addons.GrafanaOperatorAddon); //sets metadata ordered to true for GrafanaOperatorAddon
         const addOns: Array<blueprints.ClusterAddOn> = [
             new blueprints.addons.FluxCDAddOn({
